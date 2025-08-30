@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "361779741758",
+    "project_id": "stusmart",
+    "storage_bucket": "stusmart.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:361779741758:android:95a6df34d33972cdc47d6f",
+        "android_client_info": {
+          "package_name": "com.app.stusmart"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBHxbzuIrtTrBfcdxbhZqc4UPyHL_tb4Oc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
