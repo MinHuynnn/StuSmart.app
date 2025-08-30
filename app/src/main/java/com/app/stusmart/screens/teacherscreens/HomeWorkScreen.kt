@@ -19,7 +19,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.stusmart.R
+import com.app.stusmart.ViewModel.HomeworkViewModel
 @Preview(showBackground = true, name = "HomeWorkScreen Preview")
 @Composable
 fun HomeWorkScreenPreview() {
@@ -27,10 +29,19 @@ fun HomeWorkScreenPreview() {
 }
 @Composable
 fun HomeWorkScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    viewModel: HomeworkViewModel = viewModel()
 ) {
+    var homeworkTitle by remember { mutableStateOf("") }
     var homeworkText by remember { mutableStateOf("") }
     var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedClass by remember { mutableStateOf("") }
+    var showClassSelection by remember { mutableStateOf(false) }
+    
+    val classOptions = listOf("10A1", "10A2", "11A1", "11A2", "12A1", "12A2")
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
+    val successMessage by viewModel.successMessage.collectAsState()
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
@@ -76,7 +87,38 @@ fun HomeWorkScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Nội dung bài tập", color = Color(0xFF0057D8), fontWeight = FontWeight.Bold)
+        // Chọn lớp
+        Text("Chọn lớp:", color = Color(0xFF0057D8), fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Button(
+            onClick = { showClassSelection = true },
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0057D8)),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Text(
+                text = if (selectedClass.isNotEmpty()) "Lớp: $selectedClass" else "Chọn lớp",
+                color = Color.White
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("Tiêu đề bài tập:", color = Color(0xFF0057D8), fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        OutlinedTextField(
+            value = homeworkTitle,
+            onValueChange = { homeworkTitle = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Nhập tiêu đề bài tập") },
+            shape = RoundedCornerShape(8.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("Nội dung bài tập:", color = Color(0xFF0057D8), fontWeight = FontWeight.Bold)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -113,15 +155,50 @@ fun HomeWorkScreen(
 
         Spacer(modifier = Modifier.weight(1f))
 
+        // Hiển thị thông báo lỗi
+        error?.let { errorMessage ->
+            Text(
+                text = errorMessage,
+                color = Color.Red,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+
+        // Hiển thị thông báo thành công
+        successMessage?.let { message ->
+            Text(
+                text = message,
+                color = Color.Green,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+
         Button(
-            onClick = { /* handle submit */ },
+            onClick = { 
+                if (selectedClass.isNotEmpty() && homeworkTitle.isNotEmpty() && homeworkText.isNotEmpty()) {
+                    val request = HomeworkRequest(
+                        title = homeworkTitle,
+                        content = homeworkText,
+                        className = selectedClass,
+                        teacherId = "teacher123", // TODO: Lấy từ session
+                        dueDate = viewModel.getCurrentDate(),
+                        fileUrl = selectedFileUri?.toString()
+                    )
+                    viewModel.createHomework(request)
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0057D8))
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0057D8)),
+            enabled = selectedClass.isNotEmpty() && homeworkTitle.isNotEmpty() && homeworkText.isNotEmpty() && !isLoading
         ) {
-            Text("Giao Bài Tập", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            if (isLoading) {
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
+            } else {
+                Text("Giao Bài Tập", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }

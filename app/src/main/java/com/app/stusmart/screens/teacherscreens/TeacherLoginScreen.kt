@@ -1,33 +1,33 @@
 package com.app.stusmart.screens.teacherscreens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
-
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.app.stusmart.R
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.app.stusmart.R
 import com.app.stusmart.ViewModel.LoginViewModel
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.platform.LocalContext
 
 @Preview(showBackground = true, name = "Teacher Login Screen")
 @Composable
@@ -46,13 +46,39 @@ fun TeacherLoginScreen(
     var gmail by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
-    val loginResult by viewModel.teacherLoginResult.collectAsState()
-    val error by viewModel.error.collectAsState()
+    var validationError by remember { mutableStateOf<String?>(null) }
+    val loginResult by viewModel.teacherLoginResult.collectAsState(initial = null)
+    val error by viewModel.error.collectAsState(initial = null)
     val scrollState = rememberScrollState()
 
     // Tự động cuộn xuống khi vào màn hình
     LaunchedEffect(Unit) {
         scrollState.animateScrollTo(500)
+    }
+
+    // Hàm kiểm tra validation
+    fun validateInputs(): Boolean {
+        return when {
+            gmail.trim().isEmpty() -> {
+                validationError = "Vui lòng nhập gmail"
+                false
+            }
+            password.trim().isEmpty() -> {
+                validationError = "Vui lòng nhập mật khẩu"
+                false
+            }
+            else -> {
+                validationError = null
+                true
+            }
+        }
+    }
+
+    // Hàm xử lý đăng nhập
+    fun handleLogin() {
+        if (validateInputs()) {
+            viewModel.loginTeacher(context, gmail, password)
+        }
     }
 
     Column(
@@ -108,7 +134,11 @@ fun TeacherLoginScreen(
         // Tài khoản
         OutlinedTextField(
             value = gmail,
-            onValueChange = { gmail = it },
+            onValueChange = { 
+                gmail = it
+                // Xóa lỗi validation khi người dùng bắt đầu nhập
+                if (validationError != null) validationError = null
+            },
             label = { Text("Gmail") },
             placeholder = { Text("Nhập gmail") },
             trailingIcon = {
@@ -131,7 +161,11 @@ fun TeacherLoginScreen(
         // Mật khẩu
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = { 
+                password = it
+                // Xóa lỗi validation khi người dùng bắt đầu nhập
+                if (validationError != null) validationError = null
+            },
             label = { Text("Mật Khẩu") },
             placeholder = { Text("************") },
             trailingIcon = {
@@ -156,7 +190,7 @@ fun TeacherLoginScreen(
 
         // Nút đăng nhập
         Button(
-            onClick = { viewModel.loginTeacher(context, gmail, password) },
+            onClick = { handleLogin() },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 32.dp),
@@ -173,14 +207,30 @@ fun TeacherLoginScreen(
             )
         }
 
-        // Hiển thị lỗi nếu có
-        error?.let {
-            Text(it, color = Color.Red, modifier = Modifier.padding(top = 8.dp))
+        // Hiển thị lỗi validation
+        if (validationError != null) {
+            Text(
+                text = validationError!!,
+                color = Color.Red,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+
+        // Hiển thị lỗi từ API nếu có
+        if (error != null) {
+            Text(
+                text = error!!,
+                color = Color.Red,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 8.dp)
+            )
         }
 
         // Nếu đăng nhập thành công, gọi callback
-        loginResult?.let {
-            LaunchedEffect(it) {
+        if (loginResult != null) {
+            LaunchedEffect(loginResult) {
+                Log.d("TeacherLoginScreen", "Đăng nhập thành công, loginResult: $loginResult")
                 onLoginSuccess()
             }
         }

@@ -14,7 +14,7 @@ import com.app.stusmart.screens.studentscreens.*
 import com.app.stusmart.screens.teacherscreens.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.stusmart.untils.LoginDataStore
-import com.app.stusmart.viewmodel.AttendanceViewModel
+
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -82,8 +82,7 @@ fun AppNavGraph(navController: NavHostController) {
             )
         }
 
-        composable("attendance") { navBackStackEntry ->
-            val viewModel: AttendanceViewModel = viewModel(navBackStackEntry)
+        composable("attendance") {
             AttendanceScreenWrapper(
                 initialClassName = "12A1",
                 onBack = { navController.navigate("home") },
@@ -101,7 +100,6 @@ fun AppNavGraph(navController: NavHostController) {
 
         composable("enter_grades") {
             EnterGradesStudentScreen(
-                allStudents = allStudents,
                 onBack = { navController.popBackStack() }
             )
         }

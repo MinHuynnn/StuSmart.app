@@ -17,4 +17,18 @@ interface AuthApi {
     suspend fun addStudent(@Body request: AddStudentRequest): Student
     @POST("attendance")
     suspend fun saveAttendance(@Body records: List<AttendanceRecord>)
+    
+    // Homework APIs
+    @POST("api/homeworks")
+    suspend fun createHomework(@Body request: HomeworkRequest): Homework
+    @GET("api/homeworks")
+    suspend fun getAllHomeworks(): List<Homework>
+    @GET("api/homeworks/class")
+    suspend fun getHomeworksByClass(@Query("className") className: String): List<Homework>
+    
+    // Grade APIs
+    @POST("api/grades")
+    suspend fun submitGrades(@Body submission: GradeSubmission): String
+    @GET("api/grades/homework")
+    suspend fun getGradesByHomework(@Query("homeworkId") homeworkId: String): List<Grade>
 }

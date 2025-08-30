@@ -48,13 +48,39 @@ fun StudentLoginScreen(
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
-    val loginResult by viewModel.studentLoginResult.collectAsState()
-    val error by viewModel.error.collectAsState()
+    var validationError by remember { mutableStateOf<String?>(null) }
+    val loginResult by viewModel.studentLoginResult.collectAsState(initial = null)
+    val error by viewModel.error.collectAsState(initial = null)
     val scrollState = rememberScrollState()
 
     //sau khi khai báo scrollState
     LaunchedEffect(Unit) {
         scrollState.animateScrollTo(500)
+    }
+
+    // Hàm kiểm tra validation
+    fun validateInputs(): Boolean {
+        return when {
+            username.trim().isEmpty() -> {
+                validationError = "Vui lòng nhập tài khoản"
+                false
+            }
+            password.trim().isEmpty() -> {
+                validationError = "Vui lòng nhập mật khẩu"
+                false
+            }
+            else -> {
+                validationError = null
+                true
+            }
+        }
+    }
+
+    // Hàm xử lý đăng nhập
+    fun handleLogin() {
+        if (validateInputs()) {
+            viewModel.loginStudent(context, username, password)
+        }
     }
 
     Column(
@@ -107,7 +133,11 @@ fun StudentLoginScreen(
         // Tài khoản
         OutlinedTextField(
             value = username,
-            onValueChange = { username = it },
+            onValueChange = { 
+                username = it
+                // Xóa lỗi validation khi người dùng bắt đầu nhập
+                if (validationError != null) validationError = null
+            },
             label = { Text("Tài Khoản") },
             placeholder = { Text("Tên đăng nhập") },
             trailingIcon = {
@@ -130,7 +160,11 @@ fun StudentLoginScreen(
         // Mật khẩu
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = { 
+                password = it
+                // Xóa lỗi validation khi người dùng bắt đầu nhập
+                if (validationError != null) validationError = null
+            },
             label = { Text("Mật Khẩu") },
             placeholder = { Text("************") },
             trailingIcon = {
@@ -155,7 +189,7 @@ fun StudentLoginScreen(
 
         // Nút đăng nhập
         Button(
-            onClick = { viewModel.loginStudent(context, username, password) },
+            onClick = { handleLogin() },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 32.dp),
@@ -172,15 +206,30 @@ fun StudentLoginScreen(
             )
         }
 
-        // Hiển thị lỗi nếu có
-        error?.let {
-            Text(it, color = Color.Red, modifier = Modifier.padding(top = 8.dp))
+        // Hiển thị lỗi validation
+        if (validationError != null) {
+            Text(
+                text = validationError!!,
+                color = Color.Red,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+
+        // Hiển thị lỗi từ API nếu có
+        if (error != null) {
+            Text(
+                text = error!!,
+                color = Color.Red,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 8.dp)
+            )
         }
 
         // Nếu đăng nhập thành công, gọi callback
-        loginResult?.let {
-            LaunchedEffect(it) {
-                Log.d("StudentLoginScreen", "Đăng nhập thành công, loginResult: $it")
+        if (loginResult != null) {
+            LaunchedEffect(loginResult) {
+                Log.d("StudentLoginScreen", "Đăng nhập thành công, loginResult: $loginResult")
                 onLoginSuccess()
             }
         }
