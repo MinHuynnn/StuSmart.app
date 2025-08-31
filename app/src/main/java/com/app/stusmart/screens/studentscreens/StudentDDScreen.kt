@@ -43,6 +43,34 @@ import androidx.compose.material3.Text
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.app.stusmart.ViewModel.AttendanceQRViewModel
+import com.app.stusmart.untils.LoginDataStore
+
+data class QRData(
+    val type: String,
+    val date: String,
+    val time: String,
+    val className: String
+) {
+    companion object {
+        fun parse(qrString: String): QRData? {
+            return try {
+                val parts = qrString.split("|")
+                if (parts.size == 4 && parts[0] == "ATTENDANCE_QR") {
+                    QRData(
+                        type = parts[0],
+                        date = parts[1],
+                        time = parts[2],
+                        className = parts[3]
+                    )
+                } else null
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+}
 
 @Composable
 fun StudentDDScreen(
@@ -52,6 +80,11 @@ fun StudentDDScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
+    val viewModel: AttendanceQRViewModel = viewModel()
+    val attendanceResult by viewModel.attendanceResult.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    var studentUsername by remember { mutableStateOf("") }
+    var studentClassName by remember { mutableStateOf("") }
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -65,10 +98,22 @@ fun StudentDDScreen(
     )
     LaunchedEffect(true) {
         if (!hasCameraPermission) launcher.launch(Manifest.permission.CAMERA)
+        
+        // Lấy thông tin học sinh đã đăng nhập
+        LoginDataStore.getUserId(context).collect { savedUserId ->
+            if (savedUserId != null) {
+                studentUsername = savedUserId
+                // Lấy thông tin học sinh từ API
+                viewModel.fetchStudentInfo(savedUserId) { student ->
+                    studentClassName = student.className
+                }
+            }
+        }
     }
     var scanned by remember { mutableStateOf(false) }
     var scannedValue by remember { mutableStateOf("") }
     var showDialog by remember { mutableStateOf(false) }
+    var qrData by remember { mutableStateOf<QRData?>(null) }
 
     if (!hasCameraPermission) {
         Box(
@@ -84,12 +129,59 @@ fun StudentDDScreen(
         AlertDialog(
             onDismissRequest = { showDialog = false },
             confirmButton = {
-                TextButton(onClick = { showDialog = false; scanned = false }) {
+                TextButton(onClick = { 
+                    showDialog = false; 
+                    scanned = false;
+                    viewModel.clearResult()
+                }) {
                     Text("Quét lại")
                 }
             },
-            title = { Text("QR Code đã quét") },
-            text = { Text(scannedValue) }
+            title = { 
+                Text(
+                    when {
+                        isLoading -> "Đang xử lý..."
+                        attendanceResult != null -> "Kết quả điểm danh"
+                        qrData != null -> "Điểm danh thành công!"
+                        else -> "QR Code không hợp lệ"
+                    }
+                ) 
+            },
+            text = { 
+                when {
+                    isLoading -> {
+                        Column {
+                            Text("Đang gửi thông tin điểm danh...")
+                            if (qrData != null) {
+                                Text("Ngày: ${qrData!!.date}")
+                                Text("Giờ: ${qrData!!.time}")
+                                Text("Lớp: ${qrData!!.className}")
+                            }
+                        }
+                    }
+                    attendanceResult != null -> {
+                        Column {
+                            Text(attendanceResult!!)
+                            if (qrData != null) {
+                                Text("Ngày: ${qrData!!.date}")
+                                Text("Giờ: ${qrData!!.time}")
+                                Text("Lớp: ${qrData!!.className}")
+                            }
+                        }
+                    }
+                    qrData != null -> {
+                        Column {
+                            Text("Ngày: ${qrData!!.date}")
+                            Text("Giờ: ${qrData!!.time}")
+                            Text("Lớp: ${qrData!!.className}")
+                            Text("Trạng thái: Đã điểm danh")
+                        }
+                    }
+                    else -> {
+                        Text("QR Code này không phải mã điểm danh hợp lệ")
+                    }
+                }
+            }
         )
     }
 
@@ -165,6 +257,17 @@ fun StudentDDScreen(
                             if (!scanned) {
                                 scanned = true
                                 scannedValue = qr
+                                qrData = QRData.parse(qr)
+                                
+                                // Lưu điểm danh nếu QR hợp lệ
+                                if (qrData != null && studentUsername.isNotEmpty()) {
+                                    viewModel.submitAttendance(
+                                        studentUsername = studentUsername,
+                                        qrData = qr,
+                                        className = studentClassName
+                                    )
+                                }
+                                
                                 showDialog = true
                                 onQrScanned(qr)
                             }

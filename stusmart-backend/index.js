@@ -196,6 +196,33 @@ const AttendanceSchema = new mongoose.Schema({
 });
 const Attendance = mongoose.model('Attendance', AttendanceSchema);
 
+// Homework
+const homeworkSchema = new mongoose.Schema({
+  id: Number,
+  title: String,
+  content: String,
+  className: String,
+  teacherId: String,
+  dueDate: String,
+  createdAt: String,
+  fileUrl: String
+});
+const Homework = mongoose.model('Homework', homeworkSchema);
+
+// Grade
+const gradeSchema = new mongoose.Schema({
+  id: Number,
+  studentUsername: String,
+  homeworkId: String,
+  className: String,
+  score: Number,
+  maxScore: { type: Number, default: 10 },
+  comment: String,
+  gradedAt: String,
+  gradedBy: String
+});
+const Grade = mongoose.model('Grade', gradeSchema);
+
 // ==== ATTENDANCE API ====
 app.post('/attendance', async (req, res) => {
   console.log('Received attendance:', JSON.stringify(req.body, null, 2));
@@ -206,6 +233,73 @@ app.post('/attendance', async (req, res) => {
   } catch (err) {
     console.error('Lỗi lưu điểm danh:', err);
     res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+// ==== HOMEWORK API ====
+app.post('/api/homeworks', async (req, res) => {
+  console.log('Create homework:', JSON.stringify(req.body, null, 2));
+  try {
+    const nextId = await getNextSequence('homeworkid');
+    const homework = new Homework({ 
+      ...req.body, 
+      id: nextId,
+      createdAt: new Date().toISOString().split('T')[0]
+    });
+    await homework.save();
+    res.status(201).json(homework);
+  } catch (err) {
+    console.error('Lỗi tạo bài tập:', err);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+app.get('/api/homeworks', async (req, res) => {
+  try {
+    const homeworks = await Homework.find().sort({ createdAt: -1 });
+    res.json(homeworks);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/homeworks/class', async (req, res) => {
+  try {
+    const { className } = req.query;
+    const homeworks = await Homework.find({ className }).sort({ createdAt: -1 });
+    res.json(homeworks);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==== GRADE API ====
+app.post('/api/grades', async (req, res) => {
+  console.log('Submit grades:', JSON.stringify(req.body, null, 2));
+  try {
+    const { grades } = req.body;
+    const gradesToSave = grades.map(grade => ({
+      ...grade,
+      id: Date.now() + Math.random(), // Simple ID generation
+      gradedAt: new Date().toISOString().split('T')[0]
+    }));
+    
+    await Grade.insertMany(gradesToSave);
+    console.log('Lưu điểm thành công!');
+    res.status(201).json({ message: 'Lưu điểm thành công!' });
+  } catch (err) {
+    console.error('Lỗi lưu điểm:', err);
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
+app.get('/api/grades/homework', async (req, res) => {
+  try {
+    const { homeworkId } = req.query;
+    const grades = await Grade.find({ homeworkId });
+    res.json(grades);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

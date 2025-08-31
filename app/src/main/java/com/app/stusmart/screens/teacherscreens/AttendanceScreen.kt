@@ -26,7 +26,7 @@ import java.time.format.DateTimeFormatter
 import com.app.stusmart.model.AttendanceRecord
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.platform.LocalContext
-import com.app.stusmart.viewmodel.AttendanceViewModel
+import com.app.stusmart.ViewModel.AttendanceViewModel
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState

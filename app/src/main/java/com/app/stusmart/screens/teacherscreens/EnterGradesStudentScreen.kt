@@ -30,7 +30,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.stusmart.R
 import androidx.compose.foundation.Image
 import com.app.stusmart.model.Student
+import com.app.stusmart.model.GradeRequest
+import com.app.stusmart.model.Homework
 import com.app.stusmart.ViewModel.GradesViewModel
+import com.app.stusmart.ViewModel.HomeworkViewModel
 
 @Preview(showBackground = true, name = "EnterGradesStudentScreen Preview")
 @Composable
@@ -41,16 +44,23 @@ fun EnterGradesStudentScreenPreview() {
 @Composable
 fun EnterGradesStudentScreen(
     onBack: () -> Unit,
-    viewModel: GradesViewModel = viewModel()
+    viewModel: GradesViewModel = viewModel(),
+    homeworkViewModel: HomeworkViewModel = viewModel()
 ) {
     val date = remember { "15/05/2025" }
     val students by viewModel.students.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val successMessage by viewModel.successMessage.collectAsState()
     
     val classOptions = viewModel.getClassList()
     var selectedClass by remember { mutableStateOf(classOptions.firstOrNull() ?: "") }
     var showClassSelection by remember { mutableStateOf(false) }
+    var showHomeworkSelection by remember { mutableStateOf(false) }
+    
+    val homeworks by homeworkViewModel.homeworks.collectAsState()
+    val selectedHomeworkId = viewModel.selectedHomeworkId
+    val selectedHomeworkTitle = viewModel.selectedHomeworkTitle
 
     val studentGrades = remember(selectedClass) {
         mutableStateMapOf<String, TextFieldValue>().apply {
@@ -65,6 +75,25 @@ fun EnterGradesStudentScreen(
         if (selectedClass.isEmpty() && classOptions.isNotEmpty()) {
             selectedClass = classOptions.first()
         }
+    }
+    
+    // Load bài tập về nhà khi chọn lớp
+    LaunchedEffect(selectedClass) {
+        if (selectedClass.isNotEmpty()) {
+            homeworkViewModel.fetchHomeworksByClass(selectedClass)
+        }
+    }
+    
+    // Load điểm số khi chọn bài tập
+    LaunchedEffect(selectedHomeworkId) {
+        selectedHomeworkId?.let { homeworkId ->
+            viewModel.fetchGradesByHomework(homeworkId)
+        }
+    }
+    
+    // Khởi tạo dữ liệu khi component được tạo
+    LaunchedEffect(Unit) {
+        viewModel.fetchAllStudents()
     }
 
     Column(
@@ -97,55 +126,90 @@ fun EnterGradesStudentScreen(
             }
         }
 
-        // Chọn lớp và ngày
-        Row(
+        // Chọn lớp và bài tập
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color(0xFFE6EBF4))
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
-            // Nút chọn lớp
-            Button(
-                onClick = { showClassSelection = true },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0057D8)),
-                shape = RoundedCornerShape(12.dp),
-                enabled = classOptions.isNotEmpty()
+            // Hàng đầu: Chọn lớp và ngày
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Class, contentDescription = "Class", tint = Color.White)
+                // Nút chọn lớp
+                Button(
+                    onClick = { showClassSelection = true },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0057D8)),
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = classOptions.isNotEmpty()
+                ) {
+                    Icon(Icons.Default.Class, contentDescription = "Class", tint = Color.White)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (selectedClass.isNotEmpty()) "Lớp: $selectedClass" else "Chọn lớp",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                // Nút refresh
+                IconButton(
+                    onClick = { viewModel.fetchAllStudents() },
+                    modifier = Modifier.background(Color(0xFF0057D8), RoundedCornerShape(8.dp))
+                ) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = "Refresh",
+                        tint = Color.White
+                    )
+                }
+                
                 Spacer(modifier = Modifier.width(8.dp))
+                
+                // Ngày
                 Text(
-                    text = if (selectedClass.isNotEmpty()) "Lớp: $selectedClass" else "Chọn lớp",
-                    color = Color.White,
-                    fontWeight = FontWeight.SemiBold
+                    "Ngày: $date",
+                    color = Color(0xFF0057D8),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp
                 )
             }
             
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
-            // Nút refresh
-            IconButton(
-                onClick = { viewModel.fetchAllStudents() },
-                modifier = Modifier.background(Color(0xFF0057D8), RoundedCornerShape(8.dp))
-            ) {
-                Icon(
-                    Icons.Default.Refresh,
-                    contentDescription = "Refresh",
-                    tint = Color.White
-                )
+            // Hàng thứ hai: Chọn bài tập
+            if (selectedClass.isNotEmpty() && homeworks.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Bài tập:",
+                        color = Color(0xFF0057D8),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
+                    
+                    Button(
+                        onClick = { showHomeworkSelection = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF28A745)),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = if (selectedHomeworkId != null) selectedHomeworkTitle else "Chọn bài tập",
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
             }
-            
-            Spacer(modifier = Modifier.width(8.dp))
-            
-            // Ngày
-            Text(
-                "Ngày: $date",
-                color = Color(0xFF0057D8),
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp
-            )
         }
 
         // Loading state
@@ -179,7 +243,7 @@ fun EnterGradesStudentScreen(
         }
 
         // Nội dung chính
-        if (selectedClass.isNotEmpty() && viewModel.getStudentsByClass(selectedClass).isNotEmpty()) {
+        if (selectedClass.isNotEmpty() && selectedHomeworkId != null && viewModel.getStudentsByClass(selectedClass).isNotEmpty()) {
             // Hiển thị danh sách học sinh
             Column(
                 modifier = Modifier
@@ -251,28 +315,78 @@ fun EnterGradesStudentScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Hiển thị thông báo lỗi
+                error?.let { errorMessage ->
+                    Text(
+                        text = errorMessage,
+                        color = Color.Red,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+
+                // Hiển thị thông báo thành công
+                successMessage?.let { message ->
+                    Text(
+                        text = message,
+                        color = Color.Green,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+
                 // Nút nhập điểm
-        Button(
-            onClick = { /* Submit grades logic */ },
-            modifier = Modifier
-                .fillMaxWidth()
+                Button(
+                    onClick = { 
+                        val gradesToSubmit = mutableListOf<GradeRequest>()
+                        viewModel.getStudentsByClass(selectedClass).forEach { student ->
+                            val gradeText = studentGrades[student.username]?.text ?: ""
+                            if (gradeText.isNotEmpty()) {
+                                try {
+                                    val score = gradeText.toDouble()
+                                    if (score >= 0 && score <= 10) {
+                                        gradesToSubmit.add(
+                                            GradeRequest(
+                                                studentUsername = student.username,
+                                                homeworkId = selectedHomeworkId!!,
+                                                className = selectedClass,
+                                                score = score,
+                                                gradedBy = "teacher123" // TODO: Lấy từ session
+                                            )
+                                        )
+                                    }
+                                } catch (e: NumberFormatException) {
+                                    // Bỏ qua điểm không hợp lệ
+                                }
+                            }
+                        }
+                        
+                        if (gradesToSubmit.isNotEmpty()) {
+                            viewModel.submitGrades(gradesToSubmit)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0057D8))
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0057D8)),
+                    enabled = selectedHomeworkId != null && !isLoading
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_ket_qua),
-                        contentDescription = "Submit",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        "Lưu điểm",
-                        color = Color.White,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    } else {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_ket_qua),
+                            contentDescription = "Submit",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "Lưu điểm",
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         } else if (classOptions.isEmpty()) {
@@ -359,6 +473,19 @@ fun EnterGradesStudentScreen(
                 showClassSelection = false
             },
             onDismiss = { showClassSelection = false }
+        )
+    }
+
+    // Dialog chọn bài tập
+    if (showHomeworkSelection && homeworks.isNotEmpty()) {
+        HomeworkSelectionDialog(
+            homeworks = homeworks,
+            selectedHomeworkId = selectedHomeworkId,
+            onHomeworkSelected = { homework ->
+                viewModel.setSelectedHomework(homework.id ?: "", homework.title)
+                showHomeworkSelection = false
+            },
+            onDismiss = { showHomeworkSelection = false }
         )
     }
 }
@@ -493,5 +620,80 @@ fun ClassOptionItem(
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
             fontSize = 16.sp
         )
+    }
+}
+
+@Composable
+fun HomeworkSelectionDialog(
+    homeworks: List<Homework>,
+    selectedHomeworkId: String?,
+    onHomeworkSelected: (Homework) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                "Chọn bài tập",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+        },
+        text = {
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 300.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(homeworks) { homework ->
+                    HomeworkOptionItem(
+                        homework = homework,
+                        isSelected = homework.id == selectedHomeworkId,
+                        onClick = { onHomeworkSelected(homework) }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Đóng")
+            }
+        }
+    )
+}
+
+@Composable
+fun HomeworkOptionItem(
+    homework: Homework,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .background(
+                if (isSelected) Color(0xFF28A745) else Color.Transparent,
+                RoundedCornerShape(8.dp)
+            )
+            .border(
+                width = 1.dp,
+                color = if (isSelected) Color(0xFF28A745) else Color(0xFFE0E0E0),
+                shape = RoundedCornerShape(8.dp)
+            )
+            .padding(16.dp)
+    ) {
+        Column {
+            Text(
+                text = homework.title,
+                color = if (isSelected) Color.White else Color.Black,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                fontSize = 16.sp
+            )
+            Text(
+                text = "Hạn nộp: ${homework.dueDate}",
+                color = if (isSelected) Color.White.copy(alpha = 0.8f) else Color.Gray,
+                fontSize = 12.sp
+            )
+        }
     }
 }

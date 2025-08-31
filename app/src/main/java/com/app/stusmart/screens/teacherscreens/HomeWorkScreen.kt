@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.stusmart.R
 import com.app.stusmart.ViewModel.HomeworkViewModel
+import com.app.stusmart.model.HomeworkRequest
+
 @Preview(showBackground = true, name = "HomeWorkScreen Preview")
 @Composable
 fun HomeWorkScreenPreview() {
@@ -200,5 +202,42 @@ fun HomeWorkScreen(
                 Text("Giao Bài Tập", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
         }
+    }
+
+    // Dialog chọn lớp
+    if (showClassSelection) {
+        AlertDialog(
+            onDismissRequest = { showClassSelection = false },
+            title = {
+                Text(
+                    "Chọn lớp",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
+            },
+            text = {
+                Column {
+                    classOptions.forEach { className ->
+                        Button(
+                            onClick = { 
+                                selectedClass = className
+                                showClassSelection = false
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0057D8))
+                        ) {
+                            Text(className, color = Color.White)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showClassSelection = false }) {
+                    Text("Đóng")
+                }
+            }
+        )
     }
 }

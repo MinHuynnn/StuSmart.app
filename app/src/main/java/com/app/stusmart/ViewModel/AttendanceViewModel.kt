@@ -1,4 +1,4 @@
-package com.app.stusmart.viewmodel
+package com.app.stusmart.ViewModel
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue

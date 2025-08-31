@@ -12,8 +12,13 @@ import com.app.stusmart.screens.RoleSelectionScreen
 import com.app.stusmart.screens.SplashScreen
 import com.app.stusmart.screens.studentscreens.*
 import com.app.stusmart.screens.teacherscreens.*
+
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.stusmart.untils.LoginDataStore
+import com.app.stusmart.ViewModel.LoginViewModel
+import com.app.stusmart.ViewModel.StudentViewModel
+import com.app.stusmart.ViewModel.GradesViewModel
+import com.app.stusmart.ViewModel.HomeworkViewModel
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -119,6 +124,8 @@ fun AppNavGraph(navController: NavHostController) {
         composable("qr_screen") {
             QRScreen(onBack = { navController.popBackStack() })
         }
+
+
 
         // ---------- STUDENT SCREENS ----------
         composable("student_login") {

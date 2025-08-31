@@ -5,6 +5,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -18,7 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.app.stusmart.R
+import com.app.stusmart.ViewModel.HomeworkViewModel
+import com.app.stusmart.model.Homework
 @Preview(showBackground = true, name = "StudentHomeWorkScreen Preview")
 @Composable
 fun StudentHomeWorkScreenPreview() {
@@ -26,10 +31,20 @@ fun StudentHomeWorkScreenPreview() {
 }
 @Composable
 fun StudentHomeWorkScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    viewModel: HomeworkViewModel = viewModel()
 ) {
     var homeworkText by remember { mutableStateOf("") }
     var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedClass by remember { mutableStateOf("10A1") } // Default class
+    
+    val homeworks by viewModel.homeworks.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    
+    // Load bài tập khi component được tạo
+    LaunchedEffect(selectedClass) {
+        viewModel.fetchHomeworksByClass(selectedClass)
+    }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
@@ -75,7 +90,37 @@ fun StudentHomeWorkScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Nội dung bài tập", color = Color(0xFF0057D8), fontWeight = FontWeight.Bold)
+        // Hiển thị danh sách bài tập
+        Text("Danh sách bài tập:", color = Color(0xFF0057D8), fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFF0057D8))
+            }
+        } else if (homeworks.isNotEmpty()) {
+            LazyColumn(
+                modifier = Modifier.height(200.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(homeworks) { homework ->
+                    HomeworkCard(homework = homework)
+                }
+            }
+        } else {
+            Text(
+                "Chưa có bài tập nào",
+                color = Color.Gray,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("Nộp bài tập:", color = Color(0xFF0057D8), fontWeight = FontWeight.Bold)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -121,6 +166,51 @@ fun StudentHomeWorkScreen(
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0057D8))
         ) {
             Text("Nộp Bài", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+fun HomeworkCard(homework: Homework) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = homework.title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = Color(0xFF0057D8)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = homework.content,
+                fontSize = 14.sp,
+                color = Color.Black,
+                maxLines = 3
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Hạn nộp: ${homework.dueDate}",
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+                Text(
+                    text = "Lớp: ${homework.className}",
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+            }
         }
     }
 }
