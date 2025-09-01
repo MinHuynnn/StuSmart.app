@@ -20,12 +20,18 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Point debug to cloud backend as requested
+            buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.158:3000/\"")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Define the production API URL
+            buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.158:3000/\"")
         }
     }
     compileOptions {
@@ -37,6 +43,20 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    defaultConfig {
+        applicationId = "com.app.stusmart"
+        minSdk = 24
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Define a placeholder for the API URL
+        buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.158:3000/\"")
     }
 }
 

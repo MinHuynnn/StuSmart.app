@@ -1,7 +1,11 @@
 package com.app.stusmart.model
 
+import com.google.gson.annotations.SerializedName
+
 data class Teacher(
-    val _id: String? = null,
+    
+    @SerializedName(value = "id", alternate = ["_id"]) 
+    val id: String? = null,
     val firstName: String,
     val lastName: String,
     val idCard: String,

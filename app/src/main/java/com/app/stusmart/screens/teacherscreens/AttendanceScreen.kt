@@ -37,7 +37,7 @@ import com.vanpra.composematerialdialogs.datetime.date.DatePickerDefaults
 fun PreviewAttendanceScreen() {
     val fakeStudents = listOf(
         Student(
-            _id = "1",
+            id = "1",
             username = "hs001",
             password = "123456",
             className = "12A1",
@@ -49,7 +49,7 @@ fun PreviewAttendanceScreen() {
             address = "Hà Nội"
         ),
         Student(
-            _id = "2",
+            id = "2",
             username = "hs002",
             password = "123456",
             className = "12A1",

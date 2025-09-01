@@ -140,7 +140,7 @@ fun StudentProfileScreen(
                 style = MaterialTheme.typography.labelLarge
             )
             Text(
-                text = student._id,
+                text = student.id,
                 fontFamily = FontFamily.Monospace,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
@@ -275,7 +275,7 @@ private fun InfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label
 @Composable
 fun PreviewStudentProfileScreen() {
     val sampleStudent = Student(
-        _id = "01234567890",
+        id = "01234567890",
         username = "studentA",
         password = "password",
         className = "12A1",

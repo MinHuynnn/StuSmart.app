@@ -45,7 +45,7 @@ class LoginViewModel : ViewModel() {
 
                 // Lưu DataStore (dùng applicationContext)
                 withContext(Dispatchers.IO) {
-                    LoginDataStore.saveLogin(context.applicationContext, student._id, "student")
+                    LoginDataStore.saveLogin(context.applicationContext, student.id, "student")
                 }
 
             } catch (ce: CancellationException) {
@@ -82,7 +82,7 @@ class LoginViewModel : ViewModel() {
                 _teacherLoginResult.value = teacher
 
                 withContext(Dispatchers.IO) {
-                    LoginDataStore.saveLogin(context.applicationContext, teacher._id ?: "", "teacher")
+                    LoginDataStore.saveLogin(context.applicationContext, teacher.id ?: "", "teacher")
                 }
 
             } catch (ce: CancellationException) {
