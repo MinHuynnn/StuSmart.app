@@ -4,6 +4,12 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -19,6 +25,7 @@ import com.app.stusmart.ViewModel.LoginViewModel
 import com.app.stusmart.ViewModel.StudentViewModel
 import com.app.stusmart.ViewModel.GradesViewModel
 import com.app.stusmart.ViewModel.HomeworkViewModel
+import com.app.stusmart.ViewModel.StudentDataViewModel
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -182,7 +189,59 @@ fun AppNavGraph(navController: NavHostController) {
         }
 
         composable("student_profile") {
-            StudentOverviewScreen()
+            val context = LocalContext.current
+            val viewModel: StudentDataViewModel = viewModel()
+            val student by viewModel.student.collectAsState()
+            val isLoading by viewModel.isLoading.collectAsState()
+            val error by viewModel.error.collectAsState()
+            
+            LaunchedEffect(Unit) {
+                // Lấy studentId từ DataStore và load dữ liệu
+                LoginDataStore.getUserId(context).collect { studentId ->
+                    if (studentId != null) {
+                        viewModel.loadStudentData(studentId)
+                    }
+                }
+            }
+            
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color(0xFF0057D8))
+                    }
+                }
+                student != null -> {
+                    StudentProfileScreen(
+                        student = student!!,
+                        onBack = { navController.popBackStack() },
+                        onEditRequest = { /* TODO: Implement edit request */ }
+                    )
+                }
+                error != null -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Lỗi: $error",
+                                color = Color.Red,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                            Button(
+                                onClick = { viewModel.clearError() }
+                            ) {
+                                Text("Thử lại")
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         composable("student_dd") {

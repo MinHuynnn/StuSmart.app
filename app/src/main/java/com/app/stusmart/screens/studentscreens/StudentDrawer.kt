@@ -32,11 +32,8 @@ fun StudentDrawer(
             .padding(16.dp)
     ) {
         // Các item menu
-        DrawerItem("Hồ sơ của trường", Icons.Default.Home) {
-            onMenuItemClick("profile")
-        }
         DrawerItem("Thông tin cá nhân", Icons.Default.Person) {
-            onMenuItemClick("personal_info")
+            onMenuItemClick("student_profile")
         }
         DrawerItem("Liên hệ hỗ trợ", Icons.Default.Phone) {
             onMenuItemClick("support")

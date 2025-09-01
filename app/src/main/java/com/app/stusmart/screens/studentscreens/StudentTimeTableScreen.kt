@@ -221,26 +221,52 @@ fun StudentTimeTableScreen(
         AlertDialog(
             onDismissRequest = { editingIndex = -1 },
             confirmButton = {
-                TextButton(onClick = {
-                    subjectSchedule[selectedDayIndex]?.set(editingIndex, newSubject)
-                    editingIndex = -1
-                }) {
-                    Text("Lưu")
+                TextButton(
+                    onClick = {
+                        subjectSchedule[selectedDayIndex]?.set(editingIndex, newSubject)
+                        editingIndex = -1
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = Color(0xFF0057D8)
+                    )
+                ) {
+                    Text("Lưu", fontWeight = FontWeight.Medium)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { editingIndex = -1 }) {
-                    Text("Hủy")
+                TextButton(
+                    onClick = { editingIndex = -1 },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = Color(0xFF0057D8)
+                    )
+                ) {
+                    Text("Hủy", fontWeight = FontWeight.Medium)
                 }
             },
-            title = { Text("Chỉnh sửa môn học") },
+            title = { 
+                Text(
+                    "Chỉnh sửa môn học",
+                    color = Color(0xFF0057D8),
+                    fontWeight = FontWeight.Bold
+                ) 
+            },
             text = {
                 OutlinedTextField(
                     value = newSubject,
                     onValueChange = { newSubject = it },
-                    label = { Text("Tên môn học") }
+                    label = { Text("Tên môn học") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF0057D8),
+                        unfocusedBorderColor = Color(0xFFB3C7F7),
+                        focusedLabelColor = Color(0xFF0057D8),
+                        unfocusedLabelColor = Color(0xFF666666)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
-            }
+            },
+            containerColor = Color.White,
+            titleContentColor = Color(0xFF0057D8),
+            textContentColor = Color(0xFF0057D8)
         )
     }
 }

@@ -45,9 +45,10 @@ fun StudentHomeScreen(
             StudentDrawer { selected ->
                 scope.launch { drawerState.close() }
                 when (selected) {
-                    "profile" -> onNavigate("student_profile")
-                    "info" -> onNavigate("student_info")
+                    "student_profile", "profile" -> onNavigate("student_profile")
+                    "student_info", "info" -> onNavigate("student_info")
                     "logout" -> showLogoutDialog = true
+                    else -> Unit
                 }
             }
         }
